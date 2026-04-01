@@ -1,24 +1,39 @@
 import json
 from ollama import chat
 from ollama import ChatResponse
+import textwrap
 
 # Use filtered_data.json  
 def buildRequestPrompt(articles: list[dict]) -> str:
-    prompt = """You're job is to summarize a list of article headlines and their corresponding summaries into one 
-                summary document.
+    prompt = """
+                YOUR ROLE:
+    
+                You're job is to summarize a list of article titles and their corresponding content into one 
+                summary document. Each article will be listed numerically starting at 1 with its title and content following.
+                Memorize the title and content and then create one document that summarizes all the information you were given.
 
-                Each articles will be listed numerically starting at 1 with its headline and summary following.
-                
-                Memorize the headlines and summaries and then create one document that summarizes all the information you were given.
+                DOCUMENT GUIDELINES START:
+                1. The document will contain two sections the first being a summary of all of the content and the second being a key
+                    point section. The summary section will follow a paragraph structure and be anywhere to one to three paragraphs
+                    in length. Have a new line to separate paragraphs.
 
-                Have each line be no longer than 80 characters.
+                    The key point section will have bullet point information that the article seems to highlight. Each bullet point should be
+                    one sentence in length.
+
+                2. Have each line be no longer than 80 characters. If a line is longer than 80 characters start on a new line.
+                    This is very important.
+
+                3. Only use information explicitly stated in the articles. Do not invent numbers, projections, or partnerships.
+                    If you are uncertain on something say "I am Uncertain". 
                 
-                Bellow is the list of article headlines and summaries:\n"""
+                DOCUMENT GUIDELINES END
+
+                Bellow is the list of article titles and corresponding content:\n"""
     for i, article in enumerate(articles, start=1):
         prompt += f"""
         {i}.
-        Headline: {article['headline']}
-        Summary: {article['summary']}
+        Headline: {article['title']}
+        Summary: {article['content']}
         """
     return prompt
 
@@ -31,16 +46,50 @@ def getResponse(prompt: str) -> ChatResponse:
     ])
     return response
 
-with open('filtered_data.json') as json_file:
-    articles = json.load(json_file)
+def formatDoc(response: str, max_length: int = 80) -> None:
+    """
+    Reads a file, wraps all lines to a maximum length, and overwrites the file.
+    
+    Args:
+        file_path (str): Path to the file to edit
+        max_length (int): Maximum allowed line length (default: 80)
+    """
+    # Split into paragraphs to preserve spacing
+    paragraphs = response.split("\n\n")
+
+    wrapped_paragraphs = []
+    for para in paragraphs:
+        # Handle lists or bullet points more cleanly
+        if para.strip().startswith("*"):
+            lines = para.split("\n")
+            wrapped_lines = [
+                textwrap.fill(line, width=max_length, subsequent_indent="  ")
+                for line in lines
+            ]
+            wrapped_paragraphs.append("\n".join(wrapped_lines))
+        else:
+            wrapped_paragraphs.append(
+                textwrap.fill(para, width=max_length)
+            )
+
+    new_content = "\n\n".join(wrapped_paragraphs)
+
+    with open("response.txt", "w", encoding="utf-8") as f:
+        f.write(new_content)
+        
+# with open('filtered_EOD_data.json') as json_file:
+#     articles = json.load(json_file)
 
 
-prompt = buildRequestPrompt(articles)
-response = getResponse(prompt)
-# print(buildRequestPrompt(articles))
+# prompt = buildRequestPrompt(articles)
+# response = getResponse(prompt)
+# # print(buildRequestPrompt(articles))
 
-with open("response.txt", "w") as f:
-    print(response.message.content, file=f)
+# # with open("response.txt", "w") as f:
+# #     print(response.message.content, file=f)
 
-with open("response.json", "w") as f:
-    json.dump(response.model_dump(),f, indent=2)
+# with open("response.json", "w") as f:
+#     json.dump(response.model_dump(),f, indent=2)
+
+# formatDoc(response.message.content)
+# print("Finished formatting")

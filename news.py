@@ -1,37 +1,48 @@
-import finnhub
 import os
 from dotenv import load_dotenv 
 import json
 import requests
 
-load_dotenv()
-ticker = "NVDA"
-
-finnhub_client  = finnhub.Client(api_key=os.getenv("API_KEY"))
-
+# load_dotenv()
+# ticker = "NVDA"
+# token = os.getenv("API_KEY_EODHD")
+# num_articles = 100
+# url = f'https://eodhd.com/api/news?s={ticker}&offset=0&limit={num_articles}&api_token={token}&fmt=json'
+# data = {}
 #filter articles based on name to reduce input
-def filterArticleName(articles: list[dict]) -> list[dict]:
+def filterArticleName(articles: list[dict], ticker: str) -> list[dict]:
     filtered_articles = []
     for input in articles:
-        if ticker in input["headline"]:
+        if ticker in input["title"]:
             filtered_articles.append(input)
     return filtered_articles
 
 
-articles = finnhub_client.company_news(ticker, _from="2026-03-18", to="2026-03-18")
+# response = requests.get(url)
 
-with open("data.json", "w") as f:
-    json.dump(articles,f, indent=2)
+# if response.status_code == 200:
+#     data = response.json()
+
+#     with open("EOD_data.json", "w") as f:
+#         json.dump(data,f, indent=2)
+# else:
+#     print("Error with API call")
 
 
-filter_name = filterArticleName(articles)
 
-with open("filtered_data.json", "w") as f:
-    json.dump(filter_name,f, indent=2)
+# # load data from file
+# with open('EOD_data.json') as json_file:
+#     articles = json.load(json_file)
 
-# print("The URL is: " + filter_name[0]["url"])
+# filter_name = filterArticleName(articles)
 
-print(buildRequestPrompt(filter_name))
+# #write filtered data to file
+# with open("filtered_EOD_data.json", "w") as f:
+#     json.dump(filter_name,f, indent=2)
+
+# # # print("The URL is: " + filter_name[0]["url"])
+
+# # print(buildRequestPrompt(filter_name))
 
 
 
