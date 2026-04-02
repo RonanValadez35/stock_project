@@ -14,29 +14,9 @@ def main():
     num_articles = 100
     token = os.getenv("API_KEY_EODHD")
 
-    url = f'https://eodhd.com/api/news?s={ticker}&offset=0&limit={num_articles}&api_token={token}&fmt=json'
-    data = {}
+    articles = news.generateArticles(ticker, token, num_articles)
 
-    # call EOD API
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        data = response.json()
-
-        with open("EOD_data.json", "w") as f:
-            json.dump(data,f, indent=2)
-    else:
-        print("Error with API call")
-
-    # load data from file
-    with open('EOD_data.json') as json_file:
-        articles = json.load(json_file)
-
-    filter_name = news.filterArticleName(articles, ticker)
-
-    #write filtered data to file
-    with open("filtered_EOD_data.json", "w") as f:
-        json.dump(filter_name,f, indent=2)
+    news.filterArticleName(articles, ticker)
 
     print("filtered_EOD_data.json created")
 
