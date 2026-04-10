@@ -3,7 +3,6 @@ import news
 import summarizer
 import email_sender
 from dotenv import load_dotenv
-import requests
 import json
 
 def main():
@@ -29,8 +28,7 @@ def main():
 
     prompt = summarizer.buildRequestPrompt(articles)
     response = summarizer.getResponse(prompt)
-
-    summarizer.formatDoc(response.message.content)
+    summarizer.formatDoc(response['message']['content'])
     print("Finished formatting document preparing to send")
 
 ###############################################################
@@ -46,5 +44,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

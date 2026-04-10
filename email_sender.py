@@ -1,8 +1,5 @@
 import smtplib
 from email.message import EmailMessage
-import os
-from dotenv import load_dotenv 
-
 
 def sendEmail(sender: str, password: str, receiver: str, file_name: str) -> None:
     if not sender:
@@ -32,11 +29,3 @@ def sendEmail(sender: str, password: str, receiver: str, file_name: str) -> None
         smtp.send_message(msg)
 
     print("Email sent successfully!")
-
-
-# load_dotenv()
-# sender = os.getenv("EMAIL_USER")
-# password = os.getenv("EMAIL_PASSWORD")
-# receiver = os.getenv("RECIPIENT_EMAIL")
-
-# sendEmail(sender, password, receiver, "response.txt")

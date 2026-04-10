@@ -1,5 +1,3 @@
-import os
-from dotenv import load_dotenv 
 import json
 import requests
 
@@ -36,8 +34,3 @@ def generateArticles(ticker: str, token: str, num_articles: int) -> list[dict]:
         articles = json.load(json_file)
 
     return articles
-
-
-
-
-

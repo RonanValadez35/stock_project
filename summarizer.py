@@ -1,6 +1,6 @@
-import json
-from ollama import chat
+import os
 from ollama import ChatResponse
+from ollama import Client
 import textwrap
 
 # Use filtered_data.json  
@@ -17,8 +17,14 @@ def buildRequestPrompt(articles: list[dict]) -> str:
                     point section. The summary section will follow a paragraph structure and be anywhere to one to three paragraphs
                     in length. Have a new line to separate paragraphs.
 
-                    The key point section will have bullet point information that the article seems to highlight. Each bullet point should be
-                    one sentence in length.
+                    The key point section will contain bullet points.
+
+                    STRICT FORMATTING RULES FOR KEY POINTS:
+                    - Each bullet point MUST be on its own line.
+                    - Each bullet point MUST start with "* " (dash + space).
+                    - There MUST be a newline after every bullet point.
+                    - NEVER put multiple bullet points on the same line.
+                    - Each bullet point must be exactly one sentence.
 
                 2. Have each line be no longer than 80 characters. If a line is longer than 80 characters start on a new line.
                     This is very important.
@@ -38,12 +44,21 @@ def buildRequestPrompt(articles: list[dict]) -> str:
     return prompt
 
 def getResponse(prompt: str) -> ChatResponse:
-    response: ChatResponse = chat(model='llama3:8b', messages=[
+
+    client = Client(
+        host="https://ollama.com",
+        headers={'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY')}
+    )
+
+    messages = [
         {
             'role': 'user',
-            'content': prompt
-        }
-    ])
+            'content': prompt,
+        },
+    ]
+
+    response:ChatResponse = client.chat('gemma4:31b-cloud', messages=messages)
+
     return response
 
 def formatDoc(response: str, max_length: int = 80) -> None:
@@ -76,20 +91,3 @@ def formatDoc(response: str, max_length: int = 80) -> None:
 
     with open("response.txt", "w", encoding="utf-8") as f:
         f.write(new_content)
-        
-# with open('filtered_EOD_data.json') as json_file:
-#     articles = json.load(json_file)
-
-
-# prompt = buildRequestPrompt(articles)
-# response = getResponse(prompt)
-# # print(buildRequestPrompt(articles))
-
-# # with open("response.txt", "w") as f:
-# #     print(response.message.content, file=f)
-
-# with open("response.json", "w") as f:
-#     json.dump(response.model_dump(),f, indent=2)
-
-# formatDoc(response.message.content)
-# print("Finished formatting")
