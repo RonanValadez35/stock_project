@@ -4,7 +4,7 @@ from ollama import Client
 import textwrap
 
 # Use filtered_data.json  
-def buildRequestPrompt(articles: list[dict]) -> str:
+def buildRequestPrompt(articles: list[dict], tickers: list[str]) -> str:
     prompt = """
                 YOUR ROLE:
     
@@ -13,8 +13,11 @@ def buildRequestPrompt(articles: list[dict]) -> str:
                 Memorize the title and content and then create one document that summarizes all the information you were given.
 
                 DOCUMENT GUIDELINES START:
-                1. The document will contain two sections the first being a summary of all of the content and the second being a key
-                    point section. The summary section will follow a paragraph structure and be anywhere to one to three paragraphs
+                1. The document will be sectioned off by the stock ticker symbol. """ f"""Here are your symbols {tickers}""" """ Only these tickers will 
+                    have a section in the document, and all content of the document is on these tickers.
+                    The each ticker symbol will contain two sections the first 
+                    being a summary of all of the content and the second being a key point section. 
+                    The summary section will follow a paragraph structure and be anywhere to one to three paragraphs
                     in length. Have a new line to separate paragraphs.
 
                     The key point section will contain bullet points.
@@ -25,6 +28,30 @@ def buildRequestPrompt(articles: list[dict]) -> str:
                     - There MUST be a newline after every bullet point.
                     - NEVER put multiple bullet points on the same line.
                     - Each bullet point must be exactly one sentence.
+
+                    EXAMPLE OUTPUT:
+                        Ticker Symbol:
+
+                        Here is where the summary would go.
+
+                        New summary paragraph if required
+
+                        Keypoints:
+                        * this is a key point
+                        * here is another key point
+
+                        Different Ticker Symbol:
+                        
+                        Here is where the summary would go
+
+                        New summary paragraph if required
+
+                        Keypoints:
+                        * this is a key point
+                        * here is another key point
+
+                    END EXAMPLE OUTPUT
+                    
 
                 2. Have each line be no longer than 80 characters. If a line is longer than 80 characters start on a new line.
                     This is very important.
