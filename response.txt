@@ -1,0 +1,41 @@
+NVDA:
+
+Nvidia is evolving from a GPU designer into a full-stack AI infrastructure
+provider. The company is expanding its ecosystem through the acquisition of
+SchedMD to control the Slurm workload manager and a $2 billion investment in
+Marvell for custom silicon and networking. New hardware platforms, including
+Blackwell and the upcoming Vera Rubin, are being deployed for training,
+inference, and agentic AI workloads.
+
+The company is also diversifying into edge AI with Firefly Aerospace for lunar
+orbit analytics and joining Project Glasswing for cybersecurity. Despite its
+dominance, Nvidia faces pressure from hyperscalers developing custom chips and
+geopolitical tensions regarding a truce between the U.S. and Iran.
+
+Keypoints: * Nvidia is expanding its full-stack AI platform through strategic
+partnerships. * The company acquired SchedMD to gain control of the open-source
+Slurm software. * New Rubin and Vera Rubin platforms are targeting agentic AI
+workloads. * A $2 billion investment in Marvell focuses on custom silicon and
+networking. * The company is deploying Jetson edge AI platforms for lunar orbit
+analytics. * Geopolitical tensions with Iran have impacted short-term stock
+volatility.
+
+AMD:
+
+AMD is positioning itself as a primary competitor to Nvidia by focusing on AI
+inference and agentic AI. The company has secured major GPU deployments with
+OpenAI and Meta Platforms and is leveraging its leadership in data center CPUs
+to meet the reasoning demands of AI agents. The launch of the MI450 and Helios
+platform in late 2026 is expected to shift AMD toward system-level revenue.
+
+AMD is also a key backer of the UALink 2.0 specification to promote open, multi-
+vendor connectivity for AI accelerators. While the company shows strong growth
+in its data center segment, it faces risks from hyperscalers shifting toward
+proprietary Arm-based chips.
+
+Keypoints: * AMD is targeting growth in AI inference and agentic AI workloads. *
+The company secured large GPU capacity deals with OpenAI and Meta Platforms. *
+MI450 and Helios platforms are expected to launch in the second half of 2026. *
+AMD is a key backer of the open UALink 2.0 specification for accelerators. * The
+company is the current leader in the data center CPU market. * Hyperscaler
+shifts to Arm-based chips present a risk to x86 CPU demand.
