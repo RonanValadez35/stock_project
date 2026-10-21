@@ -1,0 +1,4 @@
+.env
+EOD_data.json
+filtered_EOD_data.json
+requirements.txt
