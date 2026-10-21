@@ -1,67 +1,52 @@
 import os
 from ollama import ChatResponse
 from ollama import Client
+import re
 import textwrap
 
 # Use filtered_data.json  
 def buildRequestPrompt(articles: list[dict], tickers: list[str]) -> str:
-    prompt = """
+    prompt = f"""
                 YOUR ROLE:
     
-                You're job is to summarize a list of article titles and their corresponding content into one 
+                Your job is to summarize a list of article titles and their corresponding content into one
                 summary document. Each article will be listed numerically starting at 1 with its title and content following.
-                Memorize the title and content and then create one document that summarizes all the information you were given.
+                Read the title and content and then create one document that summarizes all the information you were given.
 
                 DOCUMENT GUIDELINES START:
-                1. The document will be sectioned off by the stock ticker symbol. """ f"""Here are your symbols {tickers}""" """ Only these tickers will 
-                    have a section in the document, and all content of the document is on these tickers.
-                    The each ticker symbol will contain two sections the first 
-                    being a summary of all of the content and the second being a key point section. 
-                    The summary section will follow a paragraph structure and be anywhere to one to three paragraphs
-                    in length. Have a new line to separate paragraphs.
+                1. Divide the document into sections by stock ticker symbol. The only ticker symbols to include are:
+                   {tickers}
+                   Each ticker section must contain a summary followed by a key-points section.
+                   The summary must be one to three paragraphs long, with a blank line between paragraphs.
 
-                    The key point section will contain bullet points.
+                   Use this exact structure for every ticker:
 
-                    STRICT FORMATTING RULES FOR KEY POINTS:
-                    - Each bullet point MUST be on its own line.
-                    - Each bullet point MUST start with "* " (dash + space).
-                    - There MUST be a newline after every bullet point.
-                    - NEVER put multiple bullet points on the same line.
-                    - Each bullet point must be exactly one sentence.
+                   Ticker Symbol: SYMBOL
 
-                    EXAMPLE OUTPUT:
-                        Ticker Symbol:
+                   Summary paragraph.
 
-                        Here is where the summary would go.
+                   Keypoints:
+                   * First key point.
+                   * Second key point.
 
-                        New summary paragraph if required
+                   STRICT FORMATTING RULES FOR KEY POINTS:
+                   - Write the heading exactly as "Keypoints:" on its own line.
+                   - Begin every bullet with a literal asterisk followed by one space: "* ".
+                   - Do not escape the asterisk and do not output "\\*".
+                   - Put every bullet on a separate new line.
+                   - Never place two bullet points on the same line.
+                   - Write exactly one sentence per bullet point.
+                   - Add a blank line after the final bullet before the next ticker section.
 
-                        Keypoints:
-                        * this is a key point
-                        * here is another key point
-
-                        Different Ticker Symbol:
-                        
-                        Here is where the summary would go
-
-                        New summary paragraph if required
-
-                        Keypoints:
-                        * this is a key point
-                        * here is another key point
-
-                    END EXAMPLE OUTPUT
-                    
-
-                2. Have each line be no longer than 80 characters. If a line is longer than 80 characters start on a new line.
-                    This is very important.
+                2. Keep each line at most 80 characters long. Continue long bullet points on an indented
+                   line without adding another bullet marker.
 
                 3. Only use information explicitly stated in the articles. Do not invent numbers, projections, or partnerships.
-                    If you are uncertain on something say "I am Uncertain". 
+                   If you are uncertain about something, say "I am uncertain."
                 
                 DOCUMENT GUIDELINES END
 
-                Bellow is the list of article titles and corresponding content:\n"""
+                Below is the list of article titles and corresponding content:\n"""
     for i, article in enumerate(articles, start=1):
         prompt += f"""
         {i}.
@@ -84,37 +69,75 @@ def getResponse(prompt: str) -> ChatResponse:
         },
     ]
 
-    response:ChatResponse = client.chat('gemma4:31b-cloud', messages=messages)
+    response:ChatResponse = client.chat('gemma4:31b-cloud', messages=messages, options={"temperature": 0.0})
 
     return response
 
+def _normalize_keypoint_bullets(response: str) -> str:
+    """Put every key point on its own line with a plain ``* `` marker."""
+    response = response.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Match each key-points section up to the next ticker heading. This also
+    # handles a model returning an entire ticker section on a single line.
+    keypoint_section = re.compile(
+        r"Key\s*points?\s*:\s*(.*?)(?=Ticker\s+Symbol\s*:|\Z)",
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    bullet_marker = re.compile(r"(?:^|\s+)(?:\\?\*|•|-|\d+[.)])\s+")
+
+    def normalize_section(match: re.Match[str]) -> str:
+        content = match.group(1).strip()
+        points = [part.strip() for part in bullet_marker.split(content) if part.strip()]
+
+        # Even if the model omitted the marker, keep the key-points section in
+        # the requested bullet format rather than leaving it as prose.
+        if not points and content:
+            points = [content]
+
+        normalized_points = []
+        for point in points:
+            # Model-generated line wrapping is not meaningful here; wrapping
+            # is applied consistently by formatDoc below.
+            point = " ".join(point.replace(r"\*", "*").split())
+            normalized_points.append(f"* {point}")
+
+        if not normalized_points:
+            return "Keypoints:"
+        return "Keypoints:\n" + "\n".join(normalized_points) + "\n\n"
+
+    return keypoint_section.sub(normalize_section, response).strip()
+
+
 def formatDoc(response: str, max_length: int = 80) -> None:
     """
-    Reads a file, wraps all lines to a maximum length, and overwrites the file.
+    Normalize summary formatting and write it to ``response.txt``.
     
     Args:
-        file_path (str): Path to the file to edit
+        response (str): Model-generated summary text
         max_length (int): Maximum allowed line length (default: 80)
     """
-    # Split into paragraphs to preserve spacing
-    paragraphs = response.split("\n\n")
+    normalized = _normalize_keypoint_bullets(response)
+    wrapped_lines = []
 
-    wrapped_paragraphs = []
-    for para in paragraphs:
-        # Handle lists or bullet points more cleanly
-        if para.strip().startswith("*"):
-            lines = para.split("\n")
-            wrapped_lines = [
-                textwrap.fill(line, width=max_length, subsequent_indent="  ")
-                for line in lines
-            ]
-            wrapped_paragraphs.append("\n".join(wrapped_lines))
-        else:
-            wrapped_paragraphs.append(
-                textwrap.fill(para, width=max_length)
+    for line in normalized.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            # Avoid accumulating more than one blank separator line.
+            if wrapped_lines and wrapped_lines[-1] != "":
+                wrapped_lines.append("")
+        elif stripped.startswith("* "):
+            wrapped_lines.append(
+                textwrap.fill(
+                    stripped[2:],
+                    width=max_length,
+                    initial_indent="* ",
+                    subsequent_indent="  ",
+                )
             )
+        else:
+            wrapped_lines.append(textwrap.fill(stripped, width=max_length))
 
-    new_content = "\n\n".join(wrapped_paragraphs)
+    new_content = "\n".join(wrapped_lines).rstrip() + "\n"
 
     with open("response.txt", "w", encoding="utf-8") as f:
         f.write(new_content)
