@@ -56,11 +56,7 @@ def buildRequestPrompt(articles: list[dict], tickers: list[str]) -> str:
     return prompt
 
 def getResponse(prompt: str) -> ChatResponse:
-
-    client = Client(
-        host="https://ollama.com",
-        headers={'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY')}
-    )
+    client = Client(host="http://127.0.0.1:11434")
 
     messages = [
         {
@@ -69,7 +65,12 @@ def getResponse(prompt: str) -> ChatResponse:
         },
     ]
 
-    response:ChatResponse = client.chat('gemma4:31b-cloud', messages=messages, options={"temperature": 0.0})
+    model = os.getenv("OLLAMA_MODEL", "llama3:8b")
+    response: ChatResponse = client.chat(
+        model,
+        messages=messages,
+        options={"temperature": 0.0},
+    )
 
     return response
 
@@ -108,9 +109,9 @@ def _normalize_keypoint_bullets(response: str) -> str:
     return keypoint_section.sub(normalize_section, response).strip()
 
 
-def formatDoc(response: str, max_length: int = 80) -> None:
+def formatDoc(response: str, max_length: int = 80) -> str:
     """
-    Normalize summary formatting and write it to ``response.txt``.
+    Normalize summary formatting and return it as text.
     
     Args:
         response (str): Model-generated summary text
@@ -139,5 +140,4 @@ def formatDoc(response: str, max_length: int = 80) -> None:
 
     new_content = "\n".join(wrapped_lines).rstrip() + "\n"
 
-    with open("response.txt", "w", encoding="utf-8") as f:
-        f.write(new_content)
+    return new_content
